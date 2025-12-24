@@ -1,0 +1,12 @@
+services:
+  attendance-app:
+    build: .
+    container_name: attendance_tracking
+    network_mode: host
+    environment:
+      - DISPLAY=${DISPLAY} #
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ./database.db:/app/database.db
+    stdin_open: true
+    tty: true
