@@ -782,7 +782,7 @@ class MainWindow:
         content_frame.pack(expand=True, fill="both")
 
         try:
-            photo = tk.PhotoImage(file="src/resources/images/program.png")
+            photo = tk.PhotoImage(file="resources/images/program.png")
             img_label = tk.Label(content_frame, image=photo)
             img_label.image = photo
             img_label.pack(pady=(5, 10))
@@ -804,14 +804,14 @@ class MainWindow:
     def about_author(self):
         about = tk.Toplevel(self.root)
         about.title(_("title_about_author"))
-        about.geometry("300x600")
+        about.geometry("800x740")
         about.resizable(False, False)
 
         content_frame = tk.Frame(about, padx=10, pady=10)
         content_frame.pack(expand=True, fill="both")
 
         try:
-            photo = tk.PhotoImage(file="src/resources/images/authorImage.png")
+            photo = tk.PhotoImage(file="resources/images/aboutPreview.png")
             img_label = tk.Label(content_frame, image=photo)
             img_label.image = photo
             img_label.pack(pady=(5, 10))
