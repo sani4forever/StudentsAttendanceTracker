@@ -21,6 +21,7 @@ def main():
     app = MainWindow(controller)
 
     controller.set_view(app)
+    controller.set_root(app.root)
 
     try:
         app.start()
