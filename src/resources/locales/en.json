@@ -111,5 +111,16 @@
     "warning_missed_hours_0": " - 0 missed hours",
     "warning_missed_hours_1": " - 1 missed hour",
     "warning_missed_hours_2": " - 2 missed hours",
-    "warning_separator": ", "
+    "warning_separator": ", ",
+    "title_import": "Import",
+    "title_automatic_import": "Automatic import",
+    "title_export": "Export",
+    "title_export_xml": "Export to XML",
+    "title_export_json": "Export to JSON",
+    "title_export_xml_groups": "Export to XML (groups)",
+    "title_export_xml_students": "Export to XML (students)",
+    "title_export_xml_journal": "Export to XML (journal)",
+    "title_export_pickle": "Export to Pickle",
+    "title_export_msgpack": "Export to MessagePack",
+    "title_export_binary": "Export to binary format"
 }

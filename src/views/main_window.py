@@ -1,4 +1,5 @@
 import tkinter as tk
+import os
 from calendar import monthrange
 from tkinter import ttk
 from datetime import datetime
@@ -6,8 +7,9 @@ import platform
 from tkinter.messagebox import showerror, showinfo
 
 from src.views.components.spreadsheet import CustomSpreadsheet
-from src.utils.i18n import _  # noqa
+from src.utils.i18n import _
 from src.utils.logger import setup_logger
+from tkinter import filedialog
 
 logger = setup_logger()
 sys_multiplier = 1.3 if platform.system() == "Darwin" else 1
@@ -34,10 +36,65 @@ class MainWindow:
         # --- FILE MENU ---
         file_menu = tk.Menu(self.main_menu, tearoff=0)
         file_menu.add_command(label=_("btn_save"), command=self.controller.save_data)
-        file_menu.add_command(label=_("menu_export_json"), command=self.controller.export_json)
         file_menu.add_separator()
         file_menu.add_command(label=_("btn_back"), command=self.root.quit)
         self.main_menu.add_cascade(label=_("menu_file"), menu=file_menu)
+
+        # --- IMPORT MENU ---
+        import_menu = tk.Menu(self.main_menu, tearoff=0)
+
+        import_menu.add_command(
+            label=_("title_automatic_import"),
+            command=self.open_import_file_dialog
+        )
+
+        self.main_menu.add_cascade(label=_("title_import"), menu=import_menu)
+
+        # --- EXPORT MENU ---
+        export_menu = tk.Menu(self.main_menu, tearoff=0)
+
+        # JSON Export
+        export_menu.add_command(
+            label=_("title_export_json"),
+            command=self.controller.export_json
+        )
+        export_menu.add_separator()
+
+        # XML Export Submenu
+        xml_export_menu = tk.Menu(export_menu, tearoff=0)
+        xml_export_menu.add_command(
+            label=_("title_export_xml_groups"),
+            command=self.controller.export_xml_groups
+        )
+        xml_export_menu.add_command(
+            label=_("title_export_xml_students"),
+            command=self.controller.export_xml_students
+        )
+        xml_export_menu.add_command(
+            label=_("title_export_xml_journal"),
+            command=self.controller.export_xml_journal
+        )
+        export_menu.add_cascade(
+            label=_("title_export_xml"),
+            menu=xml_export_menu
+        )
+
+        # Binary Export Submenu
+        binary_export_menu = tk.Menu(export_menu, tearoff=0)
+        binary_export_menu.add_command(
+            label=_("title_export_pickle"),
+            command=self.controller.export_pickle
+        )
+        binary_export_menu.add_command(
+            label=_("title_export_msgpack"),
+            command=self.controller.export_msgpack
+        )
+        export_menu.add_cascade(
+            label=_("title_export_binary"),
+            menu=binary_export_menu
+        )
+
+        self.main_menu.add_cascade(label=_("title_export"), menu=export_menu)
 
         # --- ADD MENU ---
         add_menu = tk.Menu(self.main_menu, tearoff=0)
@@ -289,6 +346,41 @@ class MainWindow:
             old_date.grid(row=0, column=0)
 
         frame.pack()
+
+    def open_import_file_dialog(self):
+        filename = filedialog.askopenfilename(
+            title="Select file to import",
+            filetypes=[
+                ("All supported files", "*.json *.xml *.pkl *.pickle *.msgpack"),
+                ("JSON files", "*.json"),
+                ("XML files", "*.xml"),
+                ("Pickle files", "*.pkl *.pickle"),
+                ("MessagePack files", "*.msgpack"),
+                ("All files", "*.*")
+            ]
+        )
+
+        if filename:
+            # Проверяем существование файла
+            if not os.path.exists(filename):
+                self.controller.show_error("Import Error", f"Файл не найден: {filename}")
+                return
+
+            # Проверяем размер файла
+            try:
+                file_size = os.path.getsize(filename)
+                if file_size > 10 * 1024 * 1024:  # 10 MB
+                    confirm = self.controller.ask_confirmation(
+                        "Large File",
+                        f"Файл очень большой ({file_size / 1024 / 1024:.1f} MB). Продолжить импорт?"
+                    )
+                    if not confirm:
+                        return
+            except Exception as e:
+                self.controller.show_error("Import Error", f"Не удалось проверить файл: {str(e)}")
+                return
+
+            self.controller.auto_detect_and_import(filename)
 
     def group_window(self, action: str):
         window_geometry_x = f"{int(300 * sys_multiplier)}"
