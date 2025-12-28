@@ -97,11 +97,6 @@ class AppController:
             if self.logger:
                 self.logger.error(f"Error applying saved state to UI: {e}")
 
-    def _update_month_values(self):
-        """Обновить значения месяцев для выбранного года"""
-        if hasattr(self.view, 'year') and self.view.year.get():
-            self.view.month["values"] = [""] + self.view._get_date("month", self.view.year.get())
-
     def _check_and_create_spreadsheet(self):
         """Проверить и создать таблицу если все значения выбраны"""
         if (hasattr(self.view, 'year') and self.view.year.get() and
@@ -215,28 +210,6 @@ class AppController:
             if self.logger:
                 self.logger.error(f"Error in delayed state apply: {e}")
             self._state_applied = True
-
-    def _trigger_filtering(self):
-        """Вызвать фильтрацию для создания таблицы"""
-        try:
-            # Проверяем, что все значения действительно установлены
-            if (hasattr(self.view, 'year') and self.view.year.get() and
-                    hasattr(self.view, 'month') and self.view.month.get() and
-                    hasattr(self.view, 'groups') and self.view.groups.get() and
-                    hasattr(self.view, 'lessons') and self.view.lessons.get()):
-
-                # Вызываем filtering напрямую
-                if hasattr(self.view, 'filtering'):
-                    # Нужно получить доступ к внутренней функции filtering
-                    # Поскольку она определена внутри _setup_main_frame, нужно обойти это
-                    self._call_filtering_directly()
-                else:
-                    # Альтернативный способ: генерируем события для всех комбобоксов
-                    self._generate_all_events()
-
-        except Exception as e:
-            if self.logger:
-                self.logger.error(f"Error triggering filtering: {e}")
 
     def _call_filtering_directly(self):
         """Прямой вызов filtering"""
