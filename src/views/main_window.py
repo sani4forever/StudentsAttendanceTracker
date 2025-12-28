@@ -31,62 +31,84 @@ class MainWindow:
         self.main_menu = tk.Menu(self.root)
         self.root.config(menu=self.main_menu)
 
-        # --- МЕНЮ ФАЙЛ ---
+        # --- FILE MENU ---
         file_menu = tk.Menu(self.main_menu, tearoff=0)
-        file_menu.add_command(label=_("Сохранить"), command=self.controller.save_data)
-        file_menu.add_command(label=_("Экспорт"), command=self.controller.export_json)
+        file_menu.add_command(label=_("btn_save"), command=self.controller.save_data)
+        file_menu.add_command(label=_("menu_export_json"), command=self.controller.export_json)
         file_menu.add_separator()
-        file_menu.add_command(label=_("Назад"), command=self.root.quit)
-        self.main_menu.add_cascade(label=_("Файл"), menu=file_menu)
+        file_menu.add_command(label=_("btn_back"), command=self.root.quit)
+        self.main_menu.add_cascade(label=_("menu_file"), menu=file_menu)
 
-        # --- МЕНЮ ДОБАВИТЬ ---
+        # --- ADD MENU ---
         add_menu = tk.Menu(self.main_menu, tearoff=0)
-        add_menu.add_command(label="Дату", command=lambda: self.date_window("Добавить"))
-        add_menu.add_command(label="Группу", command=lambda: self.group_window("Добавить"))
-        add_menu.add_command(label="Студента", command=lambda: self.student_window("Добавить"))
-        add_menu.add_command(label="Лекцию", command=lambda: self.lesson_window("Добавить"))
-        self.main_menu.add_cascade(label="Добавить", menu=add_menu)
+        add_menu.add_command(label=_("title_add_date"), command=lambda: self.date_window(_("btn_add")))
+        add_menu.add_command(label=_("title_add_group"), command=lambda: self.group_window(_("btn_add")))
+        add_menu.add_command(label=_("title_add_student"), command=lambda: self.student_window(_("btn_add")))
+        add_menu.add_command(label=_("title_add_lesson"), command=lambda: self.lesson_window(_("btn_add")))
+        self.main_menu.add_cascade(label=_("btn_add"), menu=add_menu)
 
-        # --- МЕНЮ ИЗМЕНИТЬ ---
+        # --- EDIT MENU ---
         edit_menu = tk.Menu(self.main_menu, tearoff=0)
-        edit_menu.add_command(label="Дату", command=lambda: self.date_window("Изменить"))
-        edit_menu.add_command(label="Группу", command=lambda: self.group_window("Изменить"))
-        edit_menu.add_command(label="Студента", command=lambda: self.student_window("Изменить"))
-        self.main_menu.add_cascade(label="Изменить", menu=edit_menu)
+        edit_menu.add_command(label=_("title_edit_date"), command=lambda: self.date_window(_("btn_edit")))
+        edit_menu.add_command(label=_("title_edit_group"), command=lambda: self.group_window(_("btn_edit")))
+        edit_menu.add_command(label=_("title_edit_student"), command=lambda: self.student_window(_("btn_edit")))
+        edit_menu.add_command(label=_("title_edit_lesson"), command=lambda: self.lesson_window(_("btn_edit")))
+        self.main_menu.add_cascade(label=_("menu_edit"), menu=edit_menu)
 
-        # --- МЕНЮ УДАЛИТЬ ---
+        # --- DELETE MENU ---
         delete_menu = tk.Menu(self.main_menu, tearoff=0)
-        delete_menu.add_command(label="Дату", command=lambda: self.date_window("Удалить"))
-        delete_menu.add_command(label="Группу", command=lambda: self.group_window("Удалить"))
-        self.main_menu.add_cascade(label="Удалить", menu=delete_menu)
+        delete_menu.add_command(label=_("title_delete_date"), command=lambda: self.date_window(_("btn_delete")))
+        delete_menu.add_command(label=_("title_delete_group"), command=lambda: self.group_window(_("btn_delete")))
+        delete_menu.add_command(label=_("title_delete_student"), command=lambda: self.student_window(_("btn_delete")))
+        delete_menu.add_command(label=_("title_delete_lesson"), command=lambda: self.lesson_window(_("btn_delete")))
+        self.main_menu.add_cascade(label=_("menu_delete"), menu=delete_menu)
 
-        # --- МЕНЮ СПРАВКА ---
+        # --- HELP MENU ---
         help_menu = tk.Menu(self.main_menu, tearoff=0)
-        help_menu.add_command(label="Об авторе", command=self.about_author)
-        help_menu.add_command(label="О программе", command=self.about_window)
-        self.main_menu.add_cascade(label="Справка", menu=help_menu)
+        help_menu.add_command(label=_("title_about_author"), command=self.about_author)
+        help_menu.add_command(label=_("title_about"), command=self.about_window)
 
-    def confirmation_window(self, main_window, yes_command, text: str = "Вы уверены?"):  # noqa
+        # --- OTHER MENU ---
+        other_menu = tk.Menu(self.main_menu, tearoff=0)
+        other_menu.add_command(label=_("menu_test_data"), command=self.test_data_window)
+        other_menu.add_command(label=_("menu_clear_db"), command=self.db_clear_window)
+        other_menu.add_separator()
+        other_menu.add_command(label=_("menu_exit"), command=self.close_program)
+        help_menu.add_cascade(label=_("menu_other"), menu=other_menu)
+
+        self.main_menu.add_cascade(label=_("menu_help"), menu=help_menu)
+
+    def confirmation_window(self, main_window, yes_command, text: str = _("confirm_exit")):
         confirm_window = tk.Toplevel(main_window)
-        confirm_window.title("Подтверждение")
+        confirm_window.title(_("title_confirm"))
         confirm_window.geometry("300x100")
         confirm_window.resizable(False, False)
         tk.Label(confirm_window, text=text).pack()
         confirmation_grid = tk.Frame(confirm_window)
-        tk.Button(confirmation_grid, text="Да", command=lambda: (yes_command(confirm_window), self.main_frame_reset())).grid(row=0, column=0)
-        tk.Button(confirmation_grid, text="Нет", command=confirm_window.destroy).grid(row=0, column=1)
+        tk.Button(confirmation_grid, text=_("btn_yes"),
+                  command=lambda: (yes_command(confirm_window), self.main_frame_reset())).grid(row=0, column=0)
+        tk.Button(confirmation_grid, text=_("btn_no"),
+                  command=confirm_window.destroy).grid(row=0, column=1)
         confirmation_grid.pack()
 
-    def date_window(self, action: str):  # noqa
+    def date_window(self, action: str):
         window = tk.Toplevel(self.root)
-        window.title(f"{action} дату")
+        if action == _("btn_add"):
+            window.title(_("title_add_date"))
+        elif action == _("btn_edit"):
+            window.title(_("title_edit_date"))
+        elif action == _("btn_delete"):
+            window.title(_("title_delete_date"))
+
         window.geometry("360x170")
         window.resizable(False, False)
         frame = tk.Frame(window)
 
         info_label = tk.Label(frame, height=2, text="")
         info_label.grid(row=2, column=0, columnspan=2, pady=3.5)
-        tk.Button(frame, text=action, command=lambda: (button_press(action), self.main_frame_reset(only_combobox_values=True))).grid(row=3, column=0, columnspan=2, pady=5)
+        tk.Button(frame, text=action,
+                  command=lambda: (button_press(action), self.main_frame_reset(only_combobox_values=True))
+                  ).grid(row=3, column=0, columnspan=2, pady=5)
 
         def year_validate(new_value: str):
             if not new_value:
@@ -102,30 +124,30 @@ class MainWindow:
                 old_month["values"] = []
 
         def button_press(_action: str):
-            if _action == "Добавить":
+            if _action == _("btn_add"):
                 year = new_year.get()
                 month = new_month.get()
                 month = f"0{month}" if int(month) < 10 else month
 
                 if not year:
-                    info_label["text"] = "Внимание:\nНе введён год"
+                    info_label["text"] = _("err_no_year")
                     return
 
                 is_empty = not bool(self.controller.db.select_where("Dates", ["date"], {"date": f"{year}-{month}"}))
 
                 if not is_empty:
-                    info_label["text"] = "Внимание:\nТакая дата уже присутствует в журнале"
+                    info_label["text"] = _("err_date_exists")
                     return
 
                 days = [i for i in range(1, monthrange(int(year), int(month))[1] + 1)]
                 for day in days:
                     day = f"0{day}" if day < 10 else day
                     self.controller.db.insert_date(year, month, day, autocommit=False)
-                self.db._db.commit()  # noqa
+                self.controller.db._db.commit()
 
-                info_label["text"] = "Успешно добавлено"
+                info_label["text"] = _("success_added")
 
-            if _action == "Изменить":
+            if _action == _("btn_edit"):
                 def confirmation_window_yes(confirm_window):
                     _old_days = self._get_date("day", o_year, o_month)
                     _new_days = [i for i in range(1, monthrange(int(n_year), int(n_month))[1] + 1)]
@@ -135,18 +157,18 @@ class MainWindow:
                     for _day in _new_days:
                         _day = f"0{_day}" if _day < 10 else _day
                         self.controller.db.update_date(o_year, o_month, _day,
-                                            n_year, n_month, _day,
-                                            autocommit=False)
-                    self.db._db.commit()  # noqa
+                                                       n_year, n_month, _day,
+                                                       autocommit=False)
+                    self.controller.db._db.commit()
                     is_has_old = self.controller.db.select_where("Dates", ["date"], {"date": o_date})
                     if is_has_old:
                         for i in is_has_old:
                             j = i[0].split("-")
                             self.controller.db.delete_date(j[0], j[1], j[2], autocommit=False)
-                        self.db._db.commit()  # noqa
+                        self.controller.db._db.commit()
 
                     confirm_window.destroy()
-                    info_label["text"] = "Успешно изменено"
+                    info_label["text"] = _("success_edited")
 
                 n_year = new_year.get()
                 n_month = new_month.get()
@@ -157,72 +179,69 @@ class MainWindow:
                 o_date = f"{o_year}-{o_month}"
 
                 if not o_year:
-                    info_label["text"] = "Внимание:\nНе выбран \"старый\" год"
+                    info_label["text"] = _("err_no_year").replace("выбран", "выбран \"старый\"")
                     return
                 if not o_month:
-                    info_label["text"] = "Внимание:\nНе выбран \"старый\" месяц"
+                    info_label["text"] = _("err_no_month").replace("выбран", "выбран \"старый\"")
                     return
                 if not n_year:
-                    info_label["text"] = "Внимание:\nНе введён \"новый\" год"
+                    info_label["text"] = _("err_no_year").replace("выбран", "введён \"новый\"")
                     return
                 if n_date == o_date:
-                    info_label["text"] = "Внимание:\nСтарая и новая даты совпадают"
+                    info_label["text"] = _("err_same_values").replace("значение", "даты")
                     return
 
                 is_has_new = bool(self.controller.db.select_where("Dates", ["date"], {"date": n_date}))
                 is_has_not_old = not bool(self.controller.db.select_where("Dates", ["date"], {"date": o_date}))
 
                 if is_has_new:
-                    info_label["text"] = "Внимание:\nТакая дата уже присутствует в журнале"
+                    info_label["text"] = _("err_date_exists")
                     return
                 if is_has_not_old:
-                    info_label["text"] = "Внимание:\nТакой даты нет в журнале"
+                    info_label["text"] = _("err_date_not_exists")
                     return
 
-                confirmation_text = ("Вы уверены?\n"
-                                     "Внимание:\n"
-                                     "Если в выбранном вами новом году и месяце будет\n"
-                                     "меньше или больше дней, чем в предыдущих, то\n"
-                                     "несколько последних дней будут удалены или\n"
-                                     "добавлены соответственно.")
+                confirmation_text = f"{_('confirm_delete')}\n{_('warning_date_change')}"
                 self.confirmation_window(window, confirmation_window_yes, confirmation_text)
 
-            if _action == "Удалить":
+            if _action == _("btn_delete"):
                 def confirmation_window_yes(confirm_window):
                     for i in self.controller.db.select_where("Dates", ["date"], {"date": f"{year}-{month}"}):
                         j = i[0].split("-")
                         self.controller.db.delete_date(j[0], j[1], j[2], autocommit=False)
-                    self.db._db.commit()  # noqa
+                    self.controller.db._db.commit()
                     confirm_window.destroy()
-                    info_label["text"] = "Успешно изменено"
+                    info_label["text"] = _("success_deleted")
 
                 year = old_year.get()
                 month = old_month.get()
                 month = f"0{month}" if int(month) < 10 else month
 
                 if not year:
-                    info_label["text"] = "Внимание:\nНе выбран год"
+                    info_label["text"] = _("err_no_year")
                     return
                 if not month:
-                    info_label["text"] = "Внимание:\nНе выбран месяц"
+                    info_label["text"] = _("err_no_month")
                     return
 
-                is_has_not_old = not bool(self.controller.db.select_where("Dates", ["date"], {"date": f"{year}-{month}"}))
+                is_has_not_old = not bool(
+                    self.controller.db.select_where("Dates", ["date"], {"date": f"{year}-{month}"}))
 
                 if is_has_not_old:
-                    info_label["text"] = "Внимание:\nТакой даты нет в журнале"
+                    info_label["text"] = _("err_date_not_exists")
                     return
 
                 self.confirmation_window(window, confirmation_window_yes)
 
-        if action in ("Добавить", "Изменить"):
+        if action in (_("btn_add"), _("btn_edit")):
             new_date = tk.Frame(frame)
 
-            new_date_enter_label = tk.Label(new_date, text="Выберите дату:", justify="center", width=36)
+            new_date_enter_label = tk.Label(new_date, text=_("label_select_date"),
+                                            justify="center", width=36)
             new_date_enter_label.grid(row=0, column=0, columnspan=2)
 
-            tk.Label(new_date, text="Год").grid(row=1, column=0)
-            tk.Label(new_date, text="Месяц").grid(row=1, column=1)
+            tk.Label(new_date, text=_("label_year")).grid(row=1, column=0)
+            tk.Label(new_date, text=_("label_month")).grid(row=1, column=1)
 
             new_year = tk.Entry(new_date, width=10, validate="key",
                                 validatecommand=(new_date.register(year_validate), "%P"))
@@ -238,23 +257,23 @@ class MainWindow:
 
             new_date.grid(row=0, column=0)
 
-        if action in ("Изменить", "Удалить"):
-            if action == "Изменить":
+        if action in (_("btn_edit"), _("btn_delete")):
+            if action == _("btn_edit"):
                 window.geometry("400x240")
-                new_date_enter_label["text"] = "Выберите новую дату:"  # noqa
-                new_date.grid(row=1, column=0)  # noqa
+                new_date_enter_label["text"] = _("label_select_new_date")
+                new_date.grid(row=1, column=0)
 
             old_date = tk.Frame(frame)
 
             tk.Label(
                 old_date,
-                text="Выберите старую дату:" if action == "Изменить" else "Выберите дату:",
+                text=_("label_select_old_date") if action == _("btn_edit") else _("label_select_date"),
                 justify="center",
                 width=36
             ).grid(row=0, column=0, columnspan=2)
 
-            tk.Label(old_date, text="Год").grid(row=1, column=0)
-            tk.Label(old_date, text="Месяц").grid(row=1, column=1)
+            tk.Label(old_date, text=_("label_year")).grid(row=1, column=0)
+            tk.Label(old_date, text=_("label_month")).grid(row=1, column=1)
 
             old_year = ttk.Combobox(
                 old_date, width=8, state="readonly",
@@ -271,10 +290,16 @@ class MainWindow:
 
         frame.pack()
 
-    def group_window(self, action: str):  # noqa
+    def group_window(self, action: str):
         window_geometry_x = f"{int(300 * sys_multiplier)}"
         window = tk.Toplevel(self.root)
-        window.title(f"{action} группу")
+        if action == _("btn_add"):
+            window.title(_("title_add_group"))
+        elif action == _("btn_edit"):
+            window.title(_("title_edit_group"))
+        elif action == _("btn_delete"):
+            window.title(_("title_delete_group"))
+
         window.geometry(f"{window_geometry_x}x140")
         window.resizable(False, False)
         frame = tk.Frame(window)
@@ -287,73 +312,77 @@ class MainWindow:
                 old_group["values"] = groups
 
         def button_press(_action: str):
-            if _action == "Добавить":
+            if _action == _("btn_add"):
                 temp = group.get()
                 if not temp:
-                    info_label["text"] = "Внимание:\nПустая строка"
+                    info_label["text"] = _("err_empty_string")
                     return
                 is_added = self.controller.db.insert_group(temp)
                 if not is_added:
-                    info_label["text"] = "Внимание:\n Такая группа уже существует"
+                    info_label["text"] = _("err_group_exists")
                     return
-                info_label["text"] = " Успешно добавлено"
-            if _action == "Изменить":
+                info_label["text"] = _("success_added")
+
+            if _action == _("btn_edit"):
                 temp = old_group.get()
                 temp2 = group.get()
                 if not temp or not temp2:
-                    info_label["text"] = "Внимание:\nПустой выбор или пустая строка"
+                    info_label["text"] = _("err_empty_string") + "\n" + _("err_no_group").replace("выбрана",
+                                                                                                  "выбор или строка")
                     return
                 if temp2 == temp:
-                    info_label["text"] = "Внимание:\nСтарое и новое имя совпадают"
+                    info_label["text"] = _("err_same_values")
                     return
                 if temp not in groups:
-                    info_label["text"] = "Внимание:\nТакая группа не существует"
+                    info_label["text"] = _("err_group_not_exists")
                     return
                 if temp2 in groups:
-                    info_label["text"] = "Внимание:\nТакая группа уже существует"
+                    info_label["text"] = _("err_group_exists")
                     return
 
                 def confirmation_window_yes(confirm_window):
                     self.controller.db.update_group(temp, temp2)
                     confirm_window.destroy()
-                    info_label["text"] = "Успешно изменено"
+                    info_label["text"] = _("success_edited")
                     groups[groups.index(temp)] = temp2
                     old_group.set(temp2)
                     old_group["values"] = groups
 
                 self.confirmation_window(window, confirmation_window_yes)
-            if _action == "Удалить":
+
+            if _action == _("btn_delete"):
                 temp2 = old_group.get()
                 if not temp2:
-                    info_label["text"] = "Внимание:\nПустой выбор"
+                    info_label["text"] = _("err_empty_string").replace("строка", "выбор")
                     return
                 if temp2 not in groups:
-                    info_label["text"] = "Внимание:\n Такая группа не существует"
+                    info_label["text"] = _("err_group_not_exists")
                     return
 
                 def confirmation_window_yes(confirm_window):
                     self.controller.db.delete_group(temp2)
                     confirm_window.destroy()
-                    info_label["text"] = "Успешно удалено"
+                    info_label["text"] = _("success_deleted")
                     del groups[groups.index(temp2)]
                     old_group.set("")
                     old_group["values"] = groups
 
                 self.confirmation_window(window, confirmation_window_yes)
 
-        if action in ("Добавить", "Изменить"):
-            group_label = tk.Label(frame, text="Группа")
+        if action in (_("btn_add"), _("btn_edit")):
+            group_label = tk.Label(frame, text=_("label_group"))
             group_label.grid(row=0, column=0, columnspan=2)
             group = ttk.Entry(frame, width=16)
             group.grid(row=1, column=0, columnspan=2)
 
-        if action in ("Изменить", "Удалить"):
-            if action == "Изменить":
-                group_label["text"] = "Новое имя группы"  # noqa
+        if action in (_("btn_edit"), _("btn_delete")):
+            if action == _("btn_edit"):
+                group_label["text"] = _("label_new_group")
                 group_label.grid(row=0, column=1, columnspan=1, padx=10)
-                group.grid(row=1, column=1, columnspan=1, padx=10)  # noqa
-            columnspan = 2 if action == "Удалить" else 1
-            tk.Label(frame, text="Старое имя группы").grid(row=0, column=0, columnspan=columnspan, padx=10)
+                group.grid(row=1, column=1, columnspan=1, padx=10)
+
+            columnspan = 2 if action == _("btn_delete") else 1
+            tk.Label(frame, text=_("label_old_group")).grid(row=0, column=0, columnspan=columnspan, padx=10)
 
             groups = [g[0] for g in self.controller.db.having_individual_return("Groups", ["group"], ["group"])]
             old_group = ttk.Combobox(
@@ -370,10 +399,16 @@ class MainWindow:
 
         frame.pack()
 
-    def student_window(self, action: str):  # noqa
+    def student_window(self, action: str):
         window_geometry_x = f"{int(860 * sys_multiplier)}"
         window = tk.Toplevel(self.root)
-        window.title(f"{action} студента")
+        if action == _("btn_add"):
+            window.title(_("title_add_student"))
+        elif action == _("btn_edit"):
+            window.title(_("title_edit_student"))
+        elif action == _("btn_delete"):
+            window.title(_("title_delete_student"))
+
         window.geometry(f"{window_geometry_x}x170")
         window.resizable(False, False)
         frame = tk.Frame(window)
@@ -402,22 +437,27 @@ class MainWindow:
                     old_group["values"] = groups
             if combobox_name == "surname":
                 if temp_group:
-                    old_surname["values"] = sorted({s[1] for s in students if s[0] == old_group.get() and s[1].lower().startswith(temp_surname)})
+                    old_surname["values"] = sorted(
+                        {s[1] for s in students if s[0] == old_group.get() and s[1].lower().startswith(temp_surname)})
                 else:
                     old_surname["values"] = []
             if combobox_name == "name":
                 if temp_surname:
-                    old_name["values"] = sorted({s[2] for s in students if s[0] == old_group.get() and s[1] == old_surname.get() and s[2].lower().startswith(temp_name)})
+                    old_name["values"] = sorted({s[2] for s in students if
+                                                 s[0] == old_group.get() and s[1] == old_surname.get() and s[
+                                                     2].lower().startswith(temp_name)})
                 else:
                     old_name["values"] = []
             if combobox_name == "patronymic":
                 if temp_name:
                     old_patronymic["values"] = sorted(
-                        {s[3] for s in students if s[0] == old_group.get() and s[1] == old_surname.get() and s[2] == old_name.get() and s[3].lower().startswith(temp_patronymic)})
+                        {s[3] for s in students if
+                         s[0] == old_group.get() and s[1] == old_surname.get() and s[2] == old_name.get() and s[
+                             3].lower().startswith(temp_patronymic)})
                 else:
                     old_patronymic["values"] = []
 
-        def old_selected(event):  # noqa
+        def old_selected(event):
             group_selection = old_group.get()
             surname_selection = old_surname.get()
             name_selection = old_name.get()
@@ -433,23 +473,25 @@ class MainWindow:
             new_patronymic.insert(0, patronymic_selection)
 
         def button_press(_action: str):
-            if _action == "Добавить":
+            if _action == _("btn_add"):
                 temp_group = new_group.get()
                 temp_surname = new_surname.get()
                 temp_name = new_name.get()
                 temp_patronymic = new_patronymic.get()
                 if not temp_group:
-                    info_label["text"] = "Внимание:\nНе выбрана группа"
+                    info_label["text"] = _("err_no_group")
                     return
                 if not temp_surname or not temp_name or not temp_patronymic:
-                    info_label["text"] = "Внимание:\nОдна или несколько строк пусты"
+                    info_label["text"] = _("err_empty_string").replace("Пустая строка",
+                                                                       "Одна или несколько строк пусты")
                     return
                 is_added = self.controller.db.insert_student(temp_group, temp_surname, temp_name, temp_patronymic)
                 if not is_added:
-                    info_label["text"] = "Внимание:\n Такой студент в этой группе уже существует"
+                    info_label["text"] = _("err_student_exists")
                     return
-                info_label["text"] = " Успешно добавлено"
-            if _action == "Изменить":
+                info_label["text"] = _("success_added")
+
+            if _action == _("btn_edit"):
                 temp_old_group = old_group.get()
                 temp_old_surname = old_surname.get()
                 temp_old_name = old_name.get()
@@ -460,58 +502,63 @@ class MainWindow:
                 temp_new_patronymic = new_patronymic.get()
                 temp_old_student = (temp_old_group, temp_old_surname, temp_old_name, temp_old_patronymic)
                 temp_new_student = (temp_new_group, temp_new_surname, temp_new_name, temp_new_patronymic)
+
                 if not temp_old_group:
-                    info_label["text"] = "Внимание:\nНе выбрана \"старая\" группа"
+                    info_label["text"] = _("err_no_group").replace("выбрана", "выбрана \"старая\"")
                     return
                 if not temp_new_group:
-                    info_label["text"] = "Внимание:\nНе выбрана \"новая\" группа"
+                    info_label["text"] = _("err_no_group").replace("выбрана", "выбрана \"новая\"")
                     return
                 if not all(temp_old_student):
-                    info_label["text"] = "Внимание:\nОдин или несколько пустых выборов в \"Старом студенте\""
+                    info_label["text"] = _("err_empty_string").replace("Пустая строка",
+                                                                       "Один или несколько пустых выборов в \"Старом студенте\"")
                     return
                 if not all(temp_new_student):
-                    info_label["text"] = "Внимание:\nОдин или несколько пустых строк в \"Новом студенте\""
+                    info_label["text"] = _("err_empty_string").replace("Пустая строка",
+                                                                       "Один или несколько пустых строк в \"Новом студенте\"")
                     return
                 if temp_old_student == temp_new_student:
-                    info_label["text"] = "Внимание:\nСтарые и новые строки студента совпадают"
+                    info_label["text"] = _("err_same_values")
                     return
                 if temp_old_student not in students:
-                    info_label["text"] = "Внимание:\nТакого студента в этой группе не существует"
+                    info_label["text"] = _("err_student_not_exists")
                     return
                 if temp_new_student in students:
-                    info_label["text"] = "Внимание:\nТакой студент в этой группе уже существует"
+                    info_label["text"] = _("err_student_exists")
                     return
 
                 def confirmation_window_yes(confirm_window):
                     self.controller.db.update_student(*temp_old_student, *temp_new_student)
                     confirm_window.destroy()
-                    info_label["text"] = "Успешно изменено"
+                    info_label["text"] = _("success_edited")
                     students[students.index(temp_old_student)] = temp_new_student
                     old_surname.set(temp_new_surname)
                     old_name.set(temp_new_name)
                     old_patronymic.set(temp_new_patronymic)
 
                 self.confirmation_window(window, confirmation_window_yes)
-            if _action == "Удалить":
+
+            if _action == _("btn_delete"):
                 temp_group = old_group.get()
                 temp_surname = old_surname.get()
                 temp_name = old_name.get()
                 temp_patronymic = old_patronymic.get()
                 temp_student = (temp_group, temp_surname, temp_name, temp_patronymic)
                 if not temp_group:
-                    info_label["text"] = "Внимание:\nНе выбрана группа"
+                    info_label["text"] = _("err_no_group")
                     return
                 if not all(temp_student):
-                    info_label["text"] = "Внимание:\nОдин или несколько пустых выборов в \"Старом студенте\""
+                    info_label["text"] = _("err_empty_string").replace("Пустая строка",
+                                                                       "Один или несколько пустых выборов в \"Старом студенте\"")
                     return
                 if temp_student not in students:
-                    info_label["text"] = "Внимание:\nТакого студента в этой группе не существует"
+                    info_label["text"] = _("err_student_not_exists")
                     return
 
                 def confirmation_window_yes(confirm_window):
                     self.controller.db.delete_student(*temp_student)
                     confirm_window.destroy()
-                    info_label["text"] = "Успешно удалено"
+                    info_label["text"] = _("success_deleted")
                     del students[students.index(temp_student)]
                     old_group.set("")
                     old_surname.set("")
@@ -520,15 +567,15 @@ class MainWindow:
 
                 self.confirmation_window(window, confirmation_window_yes)
 
-        if action in ("Добавить", "Изменить"):
+        if action in (_("btn_add"), _("btn_edit")):
             new_student = tk.Frame(frame)
-            new_student_label = tk.Label(new_student, text="Новый студент:")
+            new_student_label = tk.Label(new_student, text=_("label_new_student") + ":")
             new_student_label.grid(row=0, column=0, columnspan=4)
 
-            new_group_label = tk.Label(new_student, text="Группа")
-            new_surname_label = tk.Label(new_student, text="Фамилия")
-            new_name_label = tk.Label(new_student, text="Имя")
-            new_patronymic_label = tk.Label(new_student, text="Отчество")
+            new_group_label = tk.Label(new_student, text=_("label_group"))
+            new_surname_label = tk.Label(new_student, text=_("label_surname"))
+            new_name_label = tk.Label(new_student, text=_("label_name"))
+            new_patronymic_label = tk.Label(new_student, text=_("label_patronymic"))
 
             groups = sorted({s[0] for s in students})
             new_group = ttk.Combobox(
@@ -553,19 +600,19 @@ class MainWindow:
 
             new_student.grid(row=0, column=0)
 
-        if action in ("Изменить", "Удалить"):
-            if action == "Изменить":
+        if action in (_("btn_edit"), _("btn_delete")):
+            if action == _("btn_edit"):
                 window.geometry(f"{window_geometry_x}x260")
-                new_student.grid(row=1, column=0, pady=10)  # noqa
+                new_student.grid(row=1, column=0, pady=10)
 
             old_student = tk.Frame(frame)
-            old_student_label = tk.Label(old_student, text="Старый студент:")
+            old_student_label = tk.Label(old_student, text=_("label_old_student") + ":")
             old_student_label.grid(row=0, column=0, columnspan=4)
 
-            old_group_label = tk.Label(old_student, text="Группа")
-            old_surname_label = tk.Label(old_student, text="Фамилия")
-            old_name_label = tk.Label(old_student, text="Имя")
-            old_patronymic_label = tk.Label(old_student, text="Отчество")
+            old_group_label = tk.Label(old_student, text=_("label_group"))
+            old_surname_label = tk.Label(old_student, text=_("label_surname"))
+            old_name_label = tk.Label(old_student, text=_("label_name"))
+            old_patronymic_label = tk.Label(old_student, text=_("label_patronymic"))
 
             groups = sorted({s[0] for s in students})
             old_group = ttk.Combobox(
@@ -592,7 +639,7 @@ class MainWindow:
                 values=[],
                 postcommand=lambda: combobox_postcommand("patronymic")
             )
-            if action == "Изменить":
+            if action == _("btn_edit"):
                 old_group.bind("<<ComboboxSelected>>", old_selected)
                 old_surname.bind("<<ComboboxSelected>>", old_selected)
                 old_name.bind("<<ComboboxSelected>>", old_selected)
@@ -616,10 +663,16 @@ class MainWindow:
 
         frame.pack()
 
-    def lesson_window(self, action: str):  # noqa
+    def lesson_window(self, action: str):
         window_geometry_x = f"{int(500 * sys_multiplier)}"
         window = tk.Toplevel(self.root)
-        window.title(f"{action} лекцию/занятие")
+        if action == _("btn_add"):
+            window.title(_("title_add_lesson"))
+        elif action == _("btn_edit"):
+            window.title(_("title_edit_lesson"))
+        elif action == _("btn_delete"):
+            window.title(_("title_delete_lesson"))
+
         window.geometry(f"{window_geometry_x}x140")
         window.resizable(False, False)
         frame = tk.Frame(window)
@@ -632,73 +685,77 @@ class MainWindow:
                 old_lesson["values"] = lessons
 
         def button_press(_action: str):
-            if _action == "Добавить":
+            if _action == _("btn_add"):
                 temp = lesson.get()
                 if not temp:
-                    info_label["text"] = "Внимание:\nПустая строка"
+                    info_label["text"] = _("err_empty_string")
                     return
                 is_added = self.controller.db.insert_lesson(temp)
                 if not is_added:
-                    info_label["text"] = "Внимание:\n Такая лекция уже существует"
+                    info_label["text"] = _("err_lesson_exists")
                     return
-                info_label["text"] = " Успешно добавлено"
-            if _action == "Изменить":
+                info_label["text"] = _("success_added")
+
+            if _action == _("btn_edit"):
                 temp = old_lesson.get()
                 temp2 = lesson.get()
                 if not temp or not temp2:
-                    info_label["text"] = "Внимание:\nПустой выбор или пустая строка"
+                    info_label["text"] = _("err_empty_string") + "\n" + _("err_no_lesson").replace("выбран",
+                                                                                                   "выбор или строка")
                     return
                 if temp2 == temp:
-                    info_label["text"] = "Внимание:\nСтарое и новое имя совпадают"
+                    info_label["text"] = _("err_same_values")
                     return
                 if temp not in lessons:
-                    info_label["text"] = "Внимание:\nТакая лекция не существует"
+                    info_label["text"] = _("err_lesson_not_exists")
                     return
                 if temp2 in lessons:
-                    info_label["text"] = "Внимание:\nТакая лекция уже существует"
+                    info_label["text"] = _("err_lesson_exists")
                     return
 
                 def confirmation_window_yes(confirm_window):
                     self.controller.db.update_lesson(temp, temp2)
                     confirm_window.destroy()
-                    info_label["text"] = "Успешно изменено"
+                    info_label["text"] = _("success_edited")
                     lessons[lessons.index(temp)] = temp2
                     old_lesson.set(temp2)
                     old_lesson["values"] = lessons
 
                 self.confirmation_window(window, confirmation_window_yes)
-            if _action == "Удалить":
+
+            if _action == _("btn_delete"):
                 temp2 = old_lesson.get()
                 if not temp2:
-                    info_label["text"] = "Внимание:\nПустой выбор"
+                    info_label["text"] = _("err_empty_string").replace("строка", "выбор")
                     return
                 if temp2 not in lessons:
-                    info_label["text"] = "Внимание:\n Такая лекция не существует"
+                    info_label["text"] = _("err_lesson_not_exists")
                     return
 
                 def confirmation_window_yes(confirm_window):
                     self.controller.db.delete_lesson(temp2)
                     confirm_window.destroy()
-                    info_label["text"] = "Успешно удалено"
+                    info_label["text"] = _("success_deleted")
                     del lessons[lessons.index(temp2)]
                     old_lesson.set("")
                     old_lesson["values"] = lessons
 
                 self.confirmation_window(window, confirmation_window_yes)
 
-        if action in ("Добавить", "Изменить"):
-            lesson_label = tk.Label(frame, text="Лекция/занятие")
+        if action in (_("btn_add"), _("btn_edit")):
+            lesson_label = tk.Label(frame, text=_("label_lesson"))
             lesson_label.grid(row=0, column=0, columnspan=2)
             lesson = ttk.Entry(frame, width=30)
             lesson.grid(row=1, column=0, columnspan=2)
 
-        if action in ("Изменить", "Удалить"):
-            if action == "Изменить":
-                lesson_label["text"] = "Новое имя лекции"  # noqa
+        if action in (_("btn_edit"), _("btn_delete")):
+            if action == _("btn_edit"):
+                lesson_label["text"] = _("label_new_lesson")
                 lesson_label.grid(row=0, column=1, columnspan=1, padx=10)
-                lesson.grid(row=1, column=1, columnspan=1, padx=10)  # noqa
-            columnspan = 2 if action == "Удалить" else 1
-            tk.Label(frame, text="Старое имя лекции").grid(row=0, column=0, columnspan=columnspan, padx=10)
+                lesson.grid(row=1, column=1, columnspan=1, padx=10)
+
+            columnspan = 2 if action == _("btn_delete") else 1
+            tk.Label(frame, text=_("label_old_lesson")).grid(row=0, column=0, columnspan=columnspan, padx=10)
 
             lessons = [le[0] for le in self.controller.db.having_individual_return("Lessons", ["lesson"], ["lesson"])]
             old_lesson = ttk.Combobox(
@@ -715,76 +772,59 @@ class MainWindow:
 
         frame.pack()
 
-
-    def about_window(self):  # noqa
+    def about_window(self):
         about = tk.Toplevel(self.root)
-        about.title("О программе")
-        about.geometry("600x550")  # Увеличиваем размер окна для удобства
+        about.title(_("title_about"))
+        about.geometry("600x550")
         about.resizable(False, False)
 
-        # Фрейм для содержимого
         content_frame = tk.Frame(about, padx=10, pady=10)
         content_frame.pack(expand=True, fill="both")
 
-        # Попытка загрузить изображение (если оно есть)
         try:
-            photo = tk.PhotoImage(file="src/resources/images/program.png")  # Указываем путь к изображению
-
-            # Добавляем изображение в окно
+            photo = tk.PhotoImage(file="src/resources/images/program.png")
             img_label = tk.Label(content_frame, image=photo)
-            img_label.image = photo  # Сохраняем ссылку на объект изображения
+            img_label.image = photo
             img_label.pack(pady=(5, 10))
         except Exception as e:
             tk.Label(content_frame, text=f"Ошибка загрузки изображения: {e}", fg="red").pack()
 
-        # Информация о программе
-        tk.Label(content_frame, text="Приложение: Учет посещаемости лекционных занятий",
+        tk.Label(content_frame, text=_("text_about_program"),
                  font=("Arial", 12, "bold")).pack()
-        tk.Label(content_frame, text="Программа позволяет:", font=("Arial", 12)).pack()
-        tk.Label(content_frame, text="1. Добавлять посещения по дате.", font=("Arial", 12)).pack()
-        tk.Label(content_frame, text="2. Отображать список студентов, посещавших занятия на определенную дату.",
-                 font=("Arial", 12)).pack()
-        tk.Label(content_frame, text="3. Добавлять и удалять группы.", font=("Arial", 12)).pack()
-        tk.Label(content_frame, text="4. Сортировать по количеству посещений и по фамилии студентов.",
-                 font=("Arial", 12)).pack()
+        tk.Label(content_frame, text=_("text_program_capabilities"), font=("Arial", 12)).pack()
+        tk.Label(content_frame, text=_("text_capability_1"), font=("Arial", 12)).pack()
+        tk.Label(content_frame, text=_("text_capability_2"), font=("Arial", 12)).pack()
+        tk.Label(content_frame, text=_("text_capability_3"), font=("Arial", 12)).pack()
+        tk.Label(content_frame, text=_("text_capability_4"), font=("Arial", 12)).pack()
+        tk.Label(content_frame, text=_("text_version"), font=("Arial", 12)).pack()
 
-        tk.Label(content_frame, text="Версия ver.1337",
-                 font=("Arial", 12)).pack()
+        tk.Button(content_frame, text=_("btn_close"), command=about.destroy,
+                  font=("Arial", 10)).pack(pady=10)
 
-        # Кнопка "Закрыть окно"
-        tk.Button(content_frame, text="Закрыть окно", command=about.destroy, font=("Arial", 10)).pack(pady=10)
-
-    def about_author(self):  # noqa
-        # Создаем окно
+    def about_author(self):
         about = tk.Toplevel(self.root)
-        about.title("Об авторе")
+        about.title(_("title_about_author"))
         about.geometry("300x600")
         about.resizable(False, False)
 
-        # Фрейм для содержимого
         content_frame = tk.Frame(about, padx=10, pady=10)
         content_frame.pack(expand=True, fill="both")
 
-        # Добавление изображения
         try:
-            # Загружаем изображение (с предварительно вручную сделанным масштабом)
-            photo = tk.PhotoImage(file="src/resources/images/authorImage.png")  # Укажите путь к вашему изображению
-
-            # Добавляем изображение в окно
+            photo = tk.PhotoImage(file="src/resources/images/authorImage.png")
             img_label = tk.Label(content_frame, image=photo)
-            img_label.image = photo  # Сохраняем ссылку на объект изображения
+            img_label.image = photo
             img_label.pack(pady=(5, 10))
         except Exception as e:
             tk.Label(content_frame, text=f"Ошибка загрузки изображения: {e}", fg="red").pack()
 
-        # Информация об авторе
-        tk.Label(content_frame, text="Автор", font=("Arial", 14, "bold")).pack()
-        tk.Label(content_frame, text="студент группы 10701123", font=("Arial", 12)).pack()
-        tk.Label(content_frame, text="Гошко Александр Игоревич", font=("Arial", 12)).pack()
-        tk.Label(content_frame, text="sani4forever@gmail.com", font=("Arial", 12), fg="blue").pack(pady=(0, 10))
+        tk.Label(content_frame, text=_("text_author"), font=("Arial", 14, "bold")).pack()
+        tk.Label(content_frame, text=_("text_author_group"), font=("Arial", 12)).pack()
+        tk.Label(content_frame, text=_("text_author_name"), font=("Arial", 12)).pack()
+        tk.Label(content_frame, text=_("text_author_email"), font=("Arial", 12), fg="blue").pack(pady=(0, 10))
 
-        # Кнопка "Назад"
-        tk.Button(content_frame, text="Назад", command=about.destroy, font=("Arial", 10)).pack(pady=10)
+        tk.Button(content_frame, text=_("btn_back"), command=about.destroy,
+                  font=("Arial", 10)).pack(pady=10)
 
     def test_data_window(self):
         def yes_command():
@@ -792,16 +832,15 @@ class MainWindow:
             test_data.destroy()
 
         test_data = tk.Toplevel(self.root)
-        test_data.title("Вставка тестовых данных")
+        test_data.title(_("title_test_data"))
         test_data.geometry("250x100")
         test_data.resizable(False, False)
 
-        tk.Label(test_data, text="Вы уверенны, что хотите").pack()
-        tk.Label(test_data, text="вставить тестовые данные?").pack()
-        tk.Label(test_data, text="(4500 записей)").pack()
+        tk.Label(test_data, text=_("confirm_test_data")).pack()
+        tk.Label(test_data, text=_("label_test_data_count")).pack()
         test_data_grid = tk.Frame(test_data)
-        tk.Button(test_data_grid, text="Нет", command=test_data.destroy).grid(row=0, column=0)
-        tk.Button(test_data_grid, text="Да", command=yes_command).grid(row=0, column=1)
+        tk.Button(test_data_grid, text=_("btn_no"), command=test_data.destroy).grid(row=0, column=0)
+        tk.Button(test_data_grid, text=_("btn_yes"), command=yes_command).grid(row=0, column=1)
         test_data_grid.pack()
 
     def db_clear_window(self):
@@ -810,15 +849,14 @@ class MainWindow:
             clear.destroy()
 
         clear = tk.Toplevel(self.root)
-        clear.title("Очистка БД")
+        clear.title(_("title_clear_db"))
         clear.geometry("200x80")
         clear.resizable(False, False)
 
-        tk.Label(clear, text="Вы уверенны, что хотите").pack()
-        tk.Label(clear, text="очистить базу данных?").pack()
+        tk.Label(clear, text=_("confirm_clear_db")).pack()
         clear_grid = tk.Frame(clear)
-        tk.Button(clear_grid, text="Нет", command=clear.destroy).grid(row=0, column=0)
-        tk.Button(clear_grid, text="Да", command=yes_command).grid(row=0, column=1)
+        tk.Button(clear_grid, text=_("btn_no"), command=clear.destroy).grid(row=0, column=0)
+        tk.Button(clear_grid, text=_("btn_yes"), command=yes_command).grid(row=0, column=1)
         clear_grid.pack()
 
     def close_program(self):
@@ -845,8 +883,8 @@ class MainWindow:
             )
 
             if not temp_journal:
-                showerror(title="Ошибка",
-                          message="Таких данных нет в базе.\nПожалуйста, выберите другие данные сверху.")
+                showerror(title=_("err_no_data"),
+                          message=_("err_no_data") + "\n" + _("err_no_data") + ".")
                 self.root.focus_set()
                 return
 
@@ -899,7 +937,7 @@ class MainWindow:
                     old_name = row_header.split("__")[1].split(" ")[1]
                     old_patronymic = row_header.split("__")[1].split(" ")[2]
                     old_lesson = self.lessons.get()
-                    self.controller.db._db.execute(  # noqa
+                    self.controller.db._db.execute(
                         f"""
                     UPDATE "Journal"
                     SET "missed_hours" = "{new_missed_hours}"
@@ -911,8 +949,8 @@ class MainWindow:
                         "lesson" = "{old_lesson}"
                     ;""")
 
-            self.controller.db._db.commit()  # noqa
-            showinfo(title="Успешно", message="Данные успешно сохранены.")
+            self.controller.db._db.commit()
+            showinfo(title=_("success_saved"), message=_("success_saved") + ".")
 
         def filtering():
             if self.year.get():
@@ -926,26 +964,26 @@ class MainWindow:
             else:
                 self.main_frame_reset(only_spreadsheet=True)
 
-        # Header (filtering)
         filtering_frame = tk.Frame(self.root)
 
-        for c in range(4): filtering_frame.columnconfigure(index=c, weight=1)  # noqa
-        # Labels
-        tk.Label(filtering_frame, text="Год:").grid(row=0, column=0)
-        tk.Label(filtering_frame, text="Месяц:").grid(row=0, column=1)
-        tk.Label(filtering_frame, text="Группа:").grid(row=0, column=2)
-        tk.Label(filtering_frame, text="Предмет:").grid(row=0, column=3)
-        # Combo boxes
+        for c in range(4):
+            filtering_frame.columnconfigure(index=c, weight=1)
+
+        tk.Label(filtering_frame, text=_("label_year") + ":").grid(row=0, column=0)
+        tk.Label(filtering_frame, text=_("label_month") + ":").grid(row=0, column=1)
+        tk.Label(filtering_frame, text=_("label_group") + ":").grid(row=0, column=2)
+        tk.Label(filtering_frame, text=_("label_lesson") + ":").grid(row=0, column=3)
+
         self.year = ttk.Combobox(filtering_frame, width=10, state="readonly")
         self.month = ttk.Combobox(filtering_frame, width=10, state="readonly")
         self.groups = ttk.Combobox(filtering_frame, width=10, state="readonly")
         self.lessons = ttk.Combobox(filtering_frame, width=30, state="readonly")
-        # Combo boxes bindings
+
         self.year.bind("<<ComboboxSelected>>", lambda event: filtering())
         self.month.bind("<<ComboboxSelected>>", lambda event: filtering())
         self.groups.bind("<<ComboboxSelected>>", lambda event: filtering())
         self.lessons.bind("<<ComboboxSelected>>", lambda event: filtering())
-        # Combo boxes placement
+
         self.year.grid(row=1, column=0)
         self.month.grid(row=1, column=1)
         self.groups.grid(row=1, column=2)
@@ -953,7 +991,6 @@ class MainWindow:
 
         filtering_frame.pack(fill="x", pady=5)
 
-        # Main spreadsheet
         self.spreadsheet = CustomSpreadsheet(self.root)
         self.spreadsheet.pack(fill="both", expand=True)
 
@@ -966,16 +1003,16 @@ class MainWindow:
         bottom_buttons = tk.Frame(bottom)
         bottom_buttons.pack(side="bottom")
 
-        tk.Button(bottom_buttons, text="Сохранить", command=save_spreadsheet).pack(side="left")
-        tk.Button(bottom_buttons, text="Сбросить", command=self.main_frame_reset).pack(side="right")
+        tk.Button(bottom_buttons, text=_("btn_save"), command=save_spreadsheet).pack(side="left")
+        tk.Button(bottom_buttons, text=_("btn_reset"), command=self.main_frame_reset).pack(side="right")
 
         color_placeholder = " " * 4
         tk.Label(bottom_color_labels, text=color_placeholder, bg="green").pack(side="left")
-        tk.Label(bottom_color_labels, text=" - 0 пропущенных часов, ").pack(side="left")
+        tk.Label(bottom_color_labels, text=_("warning_missed_hours_0") + _("warning_separator")).pack(side="left")
         tk.Label(bottom_color_labels, text=color_placeholder, bg="yellow").pack(side="left")
-        tk.Label(bottom_color_labels, text=" - 1 пропущенный час, ").pack(side="left")
+        tk.Label(bottom_color_labels, text=_("warning_missed_hours_1") + _("warning_separator")).pack(side="left")
         tk.Label(bottom_color_labels, text=color_placeholder, bg="red").pack(side="left")
-        tk.Label(bottom_color_labels, text=" - 2 пропущенных часа").pack(side="left")
+        tk.Label(bottom_color_labels, text=_("warning_missed_hours_2")).pack(side="left")
 
         self.main_frame_reset()
 
@@ -986,7 +1023,8 @@ class MainWindow:
             self.groups["values"] = [""] + [i[0] for i in
                                             self.controller.db.having_individual_return("Groups", ["group"], ["group"])]
             self.lessons["values"] = [""] + [i[0] for i in
-                                             self.controller.db.having_individual_return("Lessons", ["lesson"], ["lesson"])]
+                                             self.controller.db.having_individual_return("Lessons", ["lesson"],
+                                                                                         ["lesson"])]
 
         if only_combobox_values:
             clear_combobox_values()
@@ -1016,7 +1054,7 @@ class MainWindow:
             command_where += f' AND "month" IS "{month}"'
             command_order += ', "day"'
         command = f'{command_select} FROM "Dates" {command_where} {command_order};'
-        cursor = self.controller.db._db.cursor()  # noqa
+        cursor = self.controller.db._db.cursor()
         cursor.execute(command)
         result = cursor.fetchall()
         cursor.close()
