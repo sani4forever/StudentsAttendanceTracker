@@ -20,7 +20,7 @@ class MainWindow:
     def __init__(self, controller):
         self.controller = controller
         self.root = tk.Tk()
-        self.root.geometry("1000x500")
+        #self.root.geometry("1000x500")
 
         self.root.title(_("app_title"))
 
@@ -134,6 +134,8 @@ class MainWindow:
         help_menu.add_cascade(label=_("menu_other"), menu=other_menu)
 
         self.main_menu.add_cascade(label=_("menu_help"), menu=help_menu)
+
+
 
     def confirmation_window(self, main_window, yes_command, text: str = _("confirm_exit")):
         confirm_window = tk.Toplevel(main_window)
@@ -952,8 +954,16 @@ class MainWindow:
         clear_grid.pack()
 
     def close_program(self):
+        if hasattr(self.controller, 'save_current_state'):
+            self.controller.save_current_state()
+
+        # Закрываем БД и окно
         self.controller.db.close()
         self.root.destroy()
+
+    def auto_save_state(self):
+        if hasattr(self.controller, 'save_current_state'):
+            self.root.after(1000, self.controller.save_current_state)
 
     def _setup_main_frame(self):
         def create_spreadsheet():
@@ -1044,17 +1054,34 @@ class MainWindow:
             self.controller.db._db.commit()
             showinfo(title=_("success_saved"), message=_("success_saved") + ".")
 
+        def force_create_spreadsheet(self):
+            """Принудительно создать таблицу с текущими значениями"""
+            if all([self.year.get(), self.month.get(), self.groups.get(), self.lessons.get()]):
+                # Вызываем filtering для создания таблицы
+                self.filtering()
+
         def filtering():
             if self.year.get():
                 self.month["values"] = [""] + self._get_date("month", self.year.get())
             else:
                 self.month.set("")
                 self.month["values"] = []
+
+            # Сохраняем состояние при каждом изменении
+            if hasattr(self.controller, 'save_current_state'):
+                # Обновляем состояние в контроллере
+                self.controller.current_state["selected_year"] = self.year.get()
+                self.controller.current_state["selected_month"] = self.month.get()
+                self.controller.current_state["selected_group"] = self.groups.get()
+                self.controller.current_state["selected_lesson"] = self.lessons.get()
+                # Асинхронное сохранение
+                self.root.after(500, self.controller.save_current_state)
+
             if all([self.year.get(), self.month.get(), self.groups.get(), self.lessons.get()]):
-                self.main_frame_reset(only_spreadsheet=True)
+                self._update_spreadsheet_only()
                 create_spreadsheet()
             else:
-                self.main_frame_reset(only_spreadsheet=True)
+                self._update_spreadsheet_only()
 
         filtering_frame = tk.Frame(self.root)
 
@@ -1071,10 +1098,10 @@ class MainWindow:
         self.groups = ttk.Combobox(filtering_frame, width=10, state="readonly")
         self.lessons = ttk.Combobox(filtering_frame, width=30, state="readonly")
 
-        self.year.bind("<<ComboboxSelected>>", lambda event: filtering())
-        self.month.bind("<<ComboboxSelected>>", lambda event: filtering())
-        self.groups.bind("<<ComboboxSelected>>", lambda event: filtering())
-        self.lessons.bind("<<ComboboxSelected>>", lambda event: filtering())
+        self.year.bind("<<ComboboxSelected>>", lambda event: (filtering(), self.auto_save_state()))
+        self.month.bind("<<ComboboxSelected>>", lambda event: (filtering(), self.auto_save_state()))
+        self.groups.bind("<<ComboboxSelected>>", lambda event: (filtering(), self.auto_save_state()))
+        self.lessons.bind("<<ComboboxSelected>>", lambda event: (filtering(), self.auto_save_state()))
 
         self.year.grid(row=1, column=0)
         self.month.grid(row=1, column=1)
@@ -1106,12 +1133,53 @@ class MainWindow:
         tk.Label(bottom_color_labels, text=color_placeholder, bg="red").pack(side="left")
         tk.Label(bottom_color_labels, text=_("warning_missed_hours_2")).pack(side="left")
 
-        self.main_frame_reset()
+        #self.main_frame_reset()
+        self._initial_main_frame_setup()
+
+    def _update_spreadsheet_only(self):
+        """Обновить только таблицу без сброса значений комбобоксов"""
+        self.spreadsheet.clear()
+
+    def _load_combobox_values(self):
+        """Загрузить доступные значения в комбобоксы"""
+        # Годы
+        self.year["values"] = [""] + [i for i in self._get_date()]
+
+        # Месяцы (зависит от выбранного года)
+        selected_year = self.year.get()
+        if selected_year:
+            self.month["values"] = [""] + [i for i in self._get_date("month", selected_year)]
+        else:
+            self.month["values"] = []
+
+        # Группы
+        groups_data = self.controller.db.having_individual_return("Groups", ["group"], ["group"])
+        self.groups["values"] = [""] + [i[0] for i in groups_data] if groups_data else [""]
+
+        # Предметы
+        lessons_data = self.controller.db.having_individual_return("Lessons", ["lesson"], ["lesson"])
+        self.lessons["values"] = [""] + [i[0] for i in lessons_data] if lessons_data else [""]
+
+    def _initial_main_frame_setup(self):
+        """Начальная настройка основного фрейма без перезаписи сохраненного состояния"""
+        # Очищаем таблицу
+        self.spreadsheet.clear()
+
+        # Загружаем доступные значения в комбобоксы
+        self.year["values"] = [""] + [i for i in self._get_date()]
+        self.month["values"] = []  # Будет установлено при выборе года
+        groups_data = self.controller.db.having_individual_return("Groups", ["group"], ["group"])
+        self.groups["values"] = [""] + [i[0] for i in groups_data] if groups_data else [""]
+        lessons_data = self.controller.db.having_individual_return("Lessons", ["lesson"], ["lesson"])
+        self.lessons["values"] = [""] + [i[0] for i in lessons_data] if lessons_data else [""]
 
     def main_frame_reset(self, only_spreadsheet: bool = False, only_combobox_values: bool = False):
         def clear_combobox_values():
             self.year["values"] = [""] + [i for i in self._get_date()]
-            self.month["values"] = [""] + [i for i in self._get_date("month", self.year.get())]
+            if self.year.get():
+                self.month["values"] = [""] + [i for i in self._get_date("month", self.year.get())]
+            else:
+                self.month["values"] = []
             self.groups["values"] = [""] + [i[0] for i in
                                             self.controller.db.having_individual_return("Groups", ["group"], ["group"])]
             self.lessons["values"] = [""] + [i[0] for i in
@@ -1121,11 +1189,18 @@ class MainWindow:
         if only_combobox_values:
             clear_combobox_values()
             return
+
+        # Если only_spreadsheet=True, очищаем только таблицу
         self.spreadsheet.clear()
+
         if only_spreadsheet:
             return
-        self.year.set(today.year)
-        self.month.set(f"0{today.month}" if today.month < 10 else today.month)
+
+        # Только если явно вызвано без флагов - сбрасываем значения
+        # Это происходит когда пользователь нажимает кнопку "Сброс"
+        today = datetime.now()
+        self.year.set(str(today.year))
+        self.month.set(f"0{today.month}" if today.month < 10 else str(today.month))
         self.groups.set("")
         self.lessons.set("")
         clear_combobox_values()

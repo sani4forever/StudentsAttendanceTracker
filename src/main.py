@@ -11,6 +11,7 @@ from src.utils.validators import Validator
 from src.utils.logger import setup_logger
 from src.models.exporter import DataExporter
 from src.models.importer import DataImporter
+from src.utils.state_manager import StateManager
 
 
 def main():
@@ -20,6 +21,9 @@ def main():
     # Инициализация логгера
     logger = setup_logger()
     logger.info("Starting AttendanceTracker application")
+
+    # Инициализация менеджера состояния
+    state_manager = StateManager()
 
     # Проверка и создание директорий
     db_path = os.path.join(os.path.dirname(__file__), "../data/journal.db")
@@ -52,7 +56,8 @@ def main():
         show_error=messagebox.showerror,
         show_warning=messagebox.showwarning,
         ask_confirmation=messagebox.askyesno,
-        os_module=os
+        os_module=os,
+        state_manager = state_manager
     )
 
     # Создание представления
@@ -65,12 +70,30 @@ def main():
     logger.info("Application initialized successfully")
 
     try:
-        app.start()
+        # Загружаем сохраненное состояние
+        controller.load_saved_state()
+
+        # ИНИЦИАЛИЗИРУЕМ значения комбобоксов ПЕРЕД применением состояния
+        app._initial_main_frame_setup()
+
+        # Применяем сохраненное состояние СРАЗУ после инициализации UI
+        controller.apply_saved_state_to_ui()
+
+        # Запускаем приложение
         logger.info("Application started")
+        app.start()
+
     except Exception as e:
         logger.error(f"Application error: {e}", exc_info=True)
         raise
     finally:
+        # Сохраняем состояние только если приложение еще не закрыто
+        try:
+            if hasattr(controller, 'save_current_state') and controller.root:
+                controller.save_current_state()
+        except Exception as e:
+            logger.error(f"Error saving state on shutdown: {e}")
+
         db.close()
         logger.info("Application shutdown")
 
