@@ -215,7 +215,8 @@ class DatabaseWork(IDatabase):
             self._insert("Groups", [group])
         return not having
 
-    def insert_student(self, group: str, surname: str, name: str, patronymic: str) -> bool:
+    def insert_student(self, group: str, surname: str, name: str, patronymic: str,
+                       create_journal_entries: bool = True) -> bool:
         info = {
             "group": group,
             "surname": surname,
@@ -225,7 +226,58 @@ class DatabaseWork(IDatabase):
         having = self.having("Students", info)
         if not having:
             self._insert("Students", [group, surname, name, patronymic])
+
+        # Если нужно, создаем записи в журнале
+        if create_journal_entries:
+            self._create_journal_entries_for_student(group, surname, name, patronymic)
         return not having
+
+    def _create_journal_entries_for_student(self, group: str, surname: str, name: str, patronymic: str):
+        """Создать записи в журнале для студента"""
+        try:
+            # Получаем все даты
+            dates = self.having_individual_return("Dates", ["date"], ["date"])
+            if not dates:
+                print("No dates found in database")
+                return
+
+            # Получаем все предметы
+            lessons = self.having_individual_return("Lessons", ["lesson"], ["lesson"])
+            if not lessons:
+                print("No lessons found in database")
+                return
+
+            print(f"Creating journal entries for student {surname} {name} {patronymic}")
+            print(f"Dates: {len(dates)}, Lessons: {len(lessons)}")
+
+            entries_created = 0
+            for date_tuple in dates:
+                date = date_tuple[0]
+                for lesson_tuple in lessons:
+                    lesson = lesson_tuple[0]
+
+                    # Проверяем, нет ли уже такой записи
+                    existing = self.having("Journal", {
+                        "date": date,
+                        "group": group,
+                        "surname": surname,
+                        "name": name,
+                        "patronymic": patronymic,
+                        "lesson": lesson
+                    })
+
+                    if not existing:
+                        self._insert("Journal", [date, group, surname, name, patronymic, lesson, "-"], False)
+                        entries_created += 1
+
+            # Коммитим изменения
+            self._db.commit()
+            print(f"Created {entries_created} journal entries for student {surname} {name} {patronymic}")
+
+        except Exception as e:
+            print(f"Error creating journal entries for student: {e}")
+            self._db.rollback()
+            raise
 
     def insert_lesson(self, lesson: str) -> bool:
         having = self.having("Lessons", {"lesson": lesson})

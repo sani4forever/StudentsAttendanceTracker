@@ -6,6 +6,9 @@ class AppController:
         if not self.db:
             raise ValueError("db_model is required")
 
+        self._state_applied = False
+        self._spreadsheet_creation_pending = False
+
         # Опциональные зависимости
         self.serializer = kwargs.get('serializer')
         self.xml_serializer = kwargs.get('xml_serializer')
@@ -14,6 +17,7 @@ class AppController:
         self.os_module = kwargs.get('os_module')
         self.exporter = kwargs.get('exporter')
         self.importer = kwargs.get('importer')
+        self.state_manager = kwargs.get('state_manager')
 
         # UI функции
         self.show_info = kwargs.get('show_info', self._default_show_info)
@@ -23,6 +27,50 @@ class AppController:
 
         self.view = None
         self.root = None
+
+        self.current_state = {
+            "selected_year": None,
+            "selected_month": None,
+            "selected_group": None,
+            "selected_lesson": None,
+            "window_geometry": None,
+            "last_opened_tab": None,
+            "language": "en"
+        }
+
+    def change_language(self, language_code: str):
+        """Сменить язык интерфейса"""
+        try:
+            # Проверяем, не тот ли уже язык установлен
+            if self.current_state.get("language") == language_code:
+                return True
+
+            # Сохраняем выбранный язык
+            self.current_state["language"] = language_code
+
+            if self.state_manager:
+                self.state_manager.save_state(self.current_state)
+
+            # Загружаем новую локализацию
+            from src.utils.i18n import I18n
+            I18n.load_locale(language_code)
+
+            if self.logger:
+                self.logger.info(f"Language changed to: {language_code}")
+
+            return True
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error changing language: {e}")
+            return False
+
+    def get_current_language(self):
+        """Получить текущий язык"""
+        return self.current_state.get("language", "ru")
+
+    def get_available_languages(self):
+        """Получить список доступных языков"""
+        return ["ru", "en"]
 
     def _default_show_info(self, title, message):
         print(f"[INFO] {title}: {message}")
@@ -50,6 +98,317 @@ class AppController:
         self.db._db.commit()
         if self.logger:
             self.logger.info("Data saved to database")
+
+    # --- Save State Методы ---
+    def load_saved_state(self):
+        """Загрузить сохраненное состояние"""
+        if not self.state_manager:
+            return
+
+        saved_state = self.state_manager.load_state()
+        if saved_state:
+            # Сохраняем язык отдельно
+            saved_language = saved_state.get("language")
+
+            # Обновляем остальное состояние
+            saved_state.pop("language", None)
+            self.current_state.update(saved_state)
+
+            # Восстанавливаем язык
+            if saved_language:
+                self.current_state["language"] = saved_language
+
+            if self.logger:
+                self.logger.info(f"Application state loaded: {self.current_state}")
+
+    def apply_saved_state_to_ui(self):
+        """Применить сохраненное состояние к пользовательскому интерфейсу"""
+        # Если состояние уже применено, выходим
+        if self._state_applied:
+            return
+
+        try:
+            # Устанавливаем геометрию окна
+            if self.current_state.get("window_geometry") and hasattr(self.view, 'root'):
+                self.view.root.geometry(self.current_state["window_geometry"])
+
+            # Ждем полной инициализации UI
+            if hasattr(self.view, 'root'):
+                # Даем время на инициализацию комбобоксов
+                self.view.root.after(500, self._delayed_state_apply)
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error applying saved state to UI: {e}")
+
+    def _check_and_create_spreadsheet(self):
+        """Проверить и создать таблицу если все значения выбраны"""
+        if (hasattr(self.view, 'year') and self.view.year.get() and
+                hasattr(self.view, 'month') and self.view.month.get() and
+                hasattr(self.view, 'groups') and self.view.groups.get() and
+                hasattr(self.view, 'lessons') and self.view.lessons.get()):
+
+            # Вызываем фильтрацию чтобы создать таблицу
+            if hasattr(self.view, 'filtering'):
+                self.view.filtering()
+
+    def save_current_state(self):
+        """Сохранить текущее состояние"""
+        try:
+            # Сохраняем геометрию окна
+            if hasattr(self.view, 'root') and self.view.root:
+                self.current_state["window_geometry"] = self.view.root.geometry()
+
+            # Сохраняем значения комбобоксов
+            if hasattr(self.view, 'year'):
+                self.current_state["selected_year"] = self.view.year.get()
+            if hasattr(self.view, 'month'):
+                self.current_state["selected_month"] = self.view.month.get()
+            if hasattr(self.view, 'groups'):
+                self.current_state["selected_group"] = self.view.groups.get()
+            if hasattr(self.view, 'lessons'):
+                self.current_state["selected_lesson"] = self.view.lessons.get()
+
+            # Сохраняем состояние через state_manager
+            if self.state_manager:
+                self.state_manager.save_state(self.current_state)
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error saving current state: {e}")
+
+    def _create_table_from_state(self):
+        """Создать таблицу из сохраненного состояния"""
+        try:
+            # Проверяем, что все значения действительно установлены
+            if not (hasattr(self.view, 'year') and self.view.year.get() and
+                    hasattr(self.view, 'month') and self.view.month.get() and
+                    hasattr(self.view, 'groups') and self.view.groups.get() and
+                    hasattr(self.view, 'lessons') and self.view.lessons.get()):
+                self._state_applied = True
+                return
+
+            # Обновляем значения месяцев для выбранного года
+            if self.view.year.get():
+                self.view.month["values"] = [""] + self.view._get_date("month", self.view.year.get())
+
+            # Вызываем создание таблицы напрямую - ОДИН РАЗ
+            self._create_spreadsheet_directly()
+
+            # Помечаем состояние как примененное
+            self._state_applied = True
+            self._spreadsheet_creation_pending = False
+
+            if self.logger:
+                self.logger.info(f"Spreadsheet created from saved state")
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error creating table from state: {e}")
+            self._state_applied = True
+            self._spreadsheet_creation_pending = False
+
+    def _delayed_state_apply(self):
+        """Отложенное применение состояния (после инициализации UI)"""
+        try:
+            # Если состояние уже применено, выходим
+            if self._state_applied:
+                return
+
+            # Помечаем, что начинаем применение состояния
+            self._spreadsheet_creation_pending = True
+
+            # Применяем значения только если они не пустые
+            values_to_apply = []
+
+            if hasattr(self.view, 'year') and self.current_state.get("selected_year"):
+                self.view.year.set(self.current_state["selected_year"])
+                values_to_apply.append("year")
+
+            if hasattr(self.view, 'month') and self.current_state.get("selected_month"):
+                self.view.month.set(self.current_state["selected_month"])
+                values_to_apply.append("month")
+
+            if hasattr(self.view, 'groups') and self.current_state.get("selected_group"):
+                self.view.groups.set(self.current_state["selected_group"])
+                values_to_apply.append("group")
+
+            if hasattr(self.view, 'lessons') and self.current_state.get("selected_lesson"):
+                self.view.lessons.set(self.current_state["selected_lesson"])
+                values_to_apply.append("lesson")
+
+            if self.logger:
+                self.logger.info(f"Applied state values: {values_to_apply}")
+
+            # Проверяем, что все 4 значения установлены
+            if len(values_to_apply) == 4:
+                # Если все значения установлены, ждем обновления UI и создаем таблицу
+                self.view.root.after(800, self._create_table_from_state)
+            else:
+                # Помечаем состояние как примененное
+                self._state_applied = True
+                if self.logger:
+                    self.logger.info(f"State partially applied: {len(values_to_apply)} values")
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error in delayed state apply: {e}")
+            self._state_applied = True
+
+    def _call_filtering_directly(self):
+        """Прямой вызов filtering"""
+        # Поскольку filtering определена как вложенная функция,
+        # нужно получить к ней доступ через локальное пространство имен
+        try:
+            # Обновляем значения месяцев для выбранного года
+            if self.view.year.get():
+                self.view.month["values"] = [""] + self.view._get_date("month", self.view.year.get())
+
+            # Сохраняем состояние
+            self.current_state["selected_year"] = self.view.year.get()
+            self.current_state["selected_month"] = self.view.month.get()
+            self.current_state["selected_group"] = self.view.groups.get()
+            self.current_state["selected_lesson"] = self.view.lessons.get()
+
+            # Создаем таблицу если все значения установлены
+            if all([self.view.year.get(), self.view.month.get(),
+                    self.view.groups.get(), self.view.lessons.get()]):
+                # Вызываем create_spreadsheet напрямую
+                self._create_spreadsheet_directly()
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error calling filtering directly: {e}")
+
+    def _create_spreadsheet_directly(self):
+        """Создать таблицу напрямую"""
+        try:
+            colors = {
+                "0": "#9EE2C0",
+                "1": "#F5E2B5",
+                "2": "#FF8477",
+            }
+
+            temp_journal = self.db.select_where(
+                "Journal",
+                ["date", "group", "surname", "name", "patronymic", "lesson", "missed_hours"],
+                {
+                    "date": f"{self.view.year.get()}-{self.view.month.get()}",
+                    "group": self.view.groups.get(),
+                    "lesson": self.view.lessons.get()
+                },
+                ["surname", "name", "patronymic", "date"]
+            )
+
+            if not temp_journal:
+                if hasattr(self.view, 'root'):
+                    # Показываем ошибку только если UI готов
+                    self.show_error("Нет данных", "Нет данных для отображения")
+                return
+
+            days = []
+            students = []
+            spreadsheet_set_values = []
+            temp_student = 0
+
+            for i in temp_journal:
+                day = i[0].split("-")[-1]
+                student = f"{i[2]} {i[3]} {i[4]}"
+                if student != temp_student:
+                    temp_student = student
+                    spreadsheet_set_values.append([])
+                spreadsheet_set_values[-1].append(i[6])
+                if day not in days:
+                    days.append(day)
+                if student not in students:
+                    students.append(student)
+
+            spreadsheet_width = len(days)
+            spreadsheet_height = len(students)
+            spreadsheet_cells_values = tuple(
+                tuple(
+                    ("-", 0, 1, 2)
+                    for _ in range(spreadsheet_width)
+                )
+                for _ in range(spreadsheet_height)
+            )
+
+            # Создаем таблицу
+            if hasattr(self.view, 'spreadsheet'):
+                self.view.spreadsheet.create(
+                    columns=spreadsheet_width,
+                    rows=spreadsheet_height,
+                    columns_headers=days,
+                    rows_headers=students,
+                    set_values=spreadsheet_set_values,
+                    cells_values=spreadsheet_cells_values,
+                    cells_colors=colors
+                )
+
+                if self.logger:
+                    self.logger.info(f"Spreadsheet created with {len(students)} students and {len(days)} days")
+
+            temp_journal.clear()
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error creating spreadsheet: {e}")
+            self.show_error("Ошибка", f"Не удалось создать таблицу: {str(e)}")
+
+    def _generate_all_events(self):
+        """Сгенерировать события для всех комбобоксов"""
+        try:
+            # Генерируем события выбора по очереди с задержкой
+            if hasattr(self.view, 'year') and self.view.year.get():
+                self.view.root.after(100, lambda: self.view.year.event_generate("<<ComboboxSelected>>"))
+
+            if hasattr(self.view, 'month') and self.view.month.get():
+                self.view.root.after(200, lambda: self.view.month.event_generate("<<ComboboxSelected>>"))
+
+            if hasattr(self.view, 'groups') and self.view.groups.get():
+                self.view.root.after(300, lambda: self.view.groups.event_generate("<<ComboboxSelected>>"))
+
+            if hasattr(self.view, 'lessons') and self.view.lessons.get():
+                self.view.root.after(400, lambda: self.view.lessons.event_generate("<<ComboboxSelected>>"))
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error generating events: {e}")
+
+    def _check_and_create_table(self):
+        """Проверить и создать таблицу"""
+        try:
+            # Проверяем все ли значения установлены
+            if (hasattr(self.view, 'year') and self.view.year.get() and
+                    hasattr(self.view, 'month') and self.view.month.get() and
+                    hasattr(self.view, 'groups') and self.view.groups.get() and
+                    hasattr(self.view, 'lessons') and self.view.lessons.get()):
+
+                # Обновляем значения месяцев для выбранного года
+                if self.view.year.get():
+                    self.view.month["values"] = [""] + self.view._get_date("month", self.view.year.get())
+
+                # Создаем таблицу
+                self._create_spreadsheet_directly()
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error checking and creating table: {e}")
+
+    def clear_saved_state(self):
+        """Очистить сохраненное состояние"""
+        if self.state_manager:
+            success = self.state_manager.clear_state()
+            if success and self.logger:
+                self.logger.info("Application state cleared")
+            return success
+        return False
+
+    def get_state_info(self):
+        """Получить информацию о сохраненном состоянии"""
+        if self.state_manager:
+            return self.state_manager.get_state_info()
+        return {"exists": False}
 
     # --- ЭКСПОРТ МЕТОДЫ (упрощенные) ---
 

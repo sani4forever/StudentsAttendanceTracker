@@ -122,5 +122,12 @@
     "title_export_xml_journal": "Export to XML (journal)",
     "title_export_pickle": "Export to Pickle",
     "title_export_msgpack": "Export to MessagePack",
-    "title_export_binary": "Export to binary format"
+    "title_export_binary": "Export to binary format",
+    "menu_settings": "Settings",
+    "menu_language": "Language",
+    "language_russian": "Russian",
+    "language_english": "English",
+    "success_language_changed": "Language changed successfully",
+    "restart_required": "Restart the application to apply all changes",
+    "confirm_restart": "Do you want to restart the application now?"
 }
