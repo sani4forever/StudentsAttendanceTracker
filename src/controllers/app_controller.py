@@ -34,8 +34,43 @@ class AppController:
             "selected_group": None,
             "selected_lesson": None,
             "window_geometry": None,
-            "last_opened_tab": None
+            "last_opened_tab": None,
+            "language": "en"
         }
+
+    def change_language(self, language_code: str):
+        """Сменить язык интерфейса"""
+        try:
+            # Проверяем, не тот ли уже язык установлен
+            if self.current_state.get("language") == language_code:
+                return True
+
+            # Сохраняем выбранный язык
+            self.current_state["language"] = language_code
+
+            if self.state_manager:
+                self.state_manager.save_state(self.current_state)
+
+            # Загружаем новую локализацию
+            from src.utils.i18n import I18n
+            I18n.load_locale(language_code)
+
+            if self.logger:
+                self.logger.info(f"Language changed to: {language_code}")
+
+            return True
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Error changing language: {e}")
+            return False
+
+    def get_current_language(self):
+        """Получить текущий язык"""
+        return self.current_state.get("language", "ru")
+
+    def get_available_languages(self):
+        """Получить список доступных языков"""
+        return ["ru", "en"]
 
     def _default_show_info(self, title, message):
         print(f"[INFO] {title}: {message}")
@@ -72,7 +107,16 @@ class AppController:
 
         saved_state = self.state_manager.load_state()
         if saved_state:
+            # Сохраняем язык отдельно
+            saved_language = saved_state.get("language")
+
+            # Обновляем остальное состояние
+            saved_state.pop("language", None)
             self.current_state.update(saved_state)
+
+            # Восстанавливаем язык
+            if saved_language:
+                self.current_state["language"] = saved_language
 
             if self.logger:
                 self.logger.info(f"Application state loaded: {self.current_state}")

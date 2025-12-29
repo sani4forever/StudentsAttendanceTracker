@@ -1,3 +1,5 @@
+import subprocess
+import sys
 import tkinter as tk
 import os
 from calendar import monthrange
@@ -120,6 +122,30 @@ class MainWindow:
         delete_menu.add_command(label=_("title_delete_lesson"), command=lambda: self.lesson_window(_("btn_delete")))
         self.main_menu.add_cascade(label=_("menu_delete"), menu=delete_menu)
 
+        # --- SETTINGS MENU ---
+
+        settings_menu = tk.Menu(self.main_menu, tearoff=0)
+
+        language_menu = tk.Menu(settings_menu, tearoff=0)
+
+        # Переменные для радиокнопок
+        self.language_var = tk.StringVar(value=self.controller.get_current_language())
+
+        for lang_code in self.controller.get_available_languages():
+            # Получаем название языка из локализации
+            lang_name = _("language_russian") if lang_code == "ru" else _("language_english")
+
+            language_menu.add_radiobutton(
+                label=lang_name,
+                variable=self.language_var,
+                value=lang_code,
+                command=lambda code=lang_code: self._on_language_changed(code)
+            )
+
+        settings_menu.add_cascade(label=_("menu_language"), menu=language_menu)
+
+        self.main_menu.add_cascade(label=_("menu_settings"), menu=settings_menu)
+
         # --- HELP MENU ---
         help_menu = tk.Menu(self.main_menu, tearoff=0)
         help_menu.add_command(label=_("title_about_author"), command=self.about_author)
@@ -135,7 +161,99 @@ class MainWindow:
 
         self.main_menu.add_cascade(label=_("menu_help"), menu=help_menu)
 
+    def _on_language_changed(self, language_code: str):
+        """Обработчик изменения языка"""
+        # Изменяем язык через контроллер
+        success = self.controller.change_language(language_code)
 
+        if success:
+            # Обновляем текущий выбор в меню
+            self.language_var.set(language_code)
+
+            # Спрашиваем пользователя о перезапуске
+            self._ask_for_restart()
+
+    def _ask_for_restart(self):
+        """Спросить пользователя о перезапуске приложения"""
+        # Создаем отдельное окно для подтверждения
+        restart_window = tk.Toplevel(self.root)
+        restart_window.title(_("menu_settings"))
+        restart_window.geometry("400x150")
+        restart_window.resizable(False, False)
+        restart_window.transient(self.root)
+        restart_window.grab_set()
+
+        # Центрируем окно
+        restart_window.update_idletasks()
+        width = restart_window.winfo_width()
+        height = restart_window.winfo_height()
+        x = (restart_window.winfo_screenwidth() // 2) - (width // 2)
+        y = (restart_window.winfo_screenheight() // 2) - (height // 2)
+        restart_window.geometry(f'{width}x{height}+{x}+{y}')
+
+        # Сообщение
+        message = tk.Label(
+            restart_window,
+            text=_("success_language_changed") + "\n\n" +
+                 _("restart_required") + "\n" +
+                 _("confirm_restart"),
+            justify="center",
+            padx=20,
+            pady=20
+        )
+        message.pack()
+
+        # Кнопки
+        button_frame = tk.Frame(restart_window)
+        button_frame.pack(pady=10)
+
+        def restart_now():
+            """Перезапустить приложение сейчас"""
+            restart_window.destroy()
+            self._restart_application()
+
+        def restart_later():
+            """Отложить перезапуск"""
+            restart_window.destroy()
+            # Просто обновляем заголовок окна
+            self.root.title(_("app_title"))
+
+        tk.Button(
+            button_frame,
+            text=_("btn_yes"),
+            command=restart_now,
+            width=10
+        ).pack(side="left", padx=10)
+
+        tk.Button(
+            button_frame,
+            text=_("btn_no"),
+            command=restart_later,
+            width=10
+        ).pack(side="left", padx=10)
+
+    def _restart_application(self):
+        """Перезапустить приложение"""
+        try:
+            # Сохраняем текущее состояние
+            self.controller.save_current_state()
+
+            # Закрываем текущее окно
+            self.root.destroy()
+
+            # Перезапускаем приложение
+            python = sys.executable
+            subprocess.Popen([python] + sys.argv)
+
+            # Завершаем текущий процесс
+            sys.exit(0)
+
+        except Exception as e:
+            logger.error(f"Error restarting application: {e}")
+            self.controller.show_error(
+                _("menu_settings"),
+                _("restart_required")
+            )
 
     def confirmation_window(self, main_window, yes_command, text: str = _("confirm_exit")):
         confirm_window = tk.Toplevel(main_window)
@@ -954,12 +1072,17 @@ class MainWindow:
         clear_grid.pack()
 
     def close_program(self):
+        """Закрыть программу"""
         if hasattr(self.controller, 'save_current_state'):
             self.controller.save_current_state()
 
         # Закрываем БД и окно
         self.controller.db.close()
         self.root.destroy()
+
+        # Принудительно завершаем процесс
+        import os
+        os._exit(0)
 
     def auto_save_state(self):
         if hasattr(self.controller, 'save_current_state'):

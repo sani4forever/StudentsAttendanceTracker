@@ -15,15 +15,31 @@ from src.utils.state_manager import StateManager
 
 
 def main():
-    # Инициализация локализации
-    I18n.load_locale("ru")
+    # Инициализация менеджера состояния ПЕРВЫМ ДЕЛОМ
+    state_manager = StateManager()
+
+    # Загружаем состояние ДО инициализации локализации
+    saved_state = None
+    try:
+        saved_state = state_manager.load_state()
+    except Exception as e:
+        print(f"Error loading state: {e}")
+
+    # Определяем язык для загрузки
+    default_language = "ru"
+    if saved_state and "language" in saved_state:
+        default_language = saved_state["language"]
+        print(f"Loading saved language: {default_language}")
+
+    # Инициализация локализации с правильным языком
+    I18n.load_locale(default_language)
 
     # Инициализация логгера
     logger = setup_logger()
-    logger.info("Starting AttendanceTracker application")
+    logger.info(f"Starting AttendanceTracker application (language: {default_language})")
 
     # Инициализация менеджера состояния
-    state_manager = StateManager()
+    #state_manager = StateManager()
 
     # Проверка и создание директорий
     db_path = os.path.join(os.path.dirname(__file__), "../data/journal.db")
@@ -60,6 +76,9 @@ def main():
         state_manager = state_manager
     )
 
+    if saved_state:
+        controller.current_state.update(saved_state)
+
     # Создание представления
     app = MainWindow(controller)
 
@@ -70,10 +89,7 @@ def main():
     logger.info("Application initialized successfully")
 
     try:
-        # Загружаем сохраненное состояние
-        controller.load_saved_state()
-
-        # ИНИЦИАЛИЗИРУЕМ значения комбобоксов ПЕРЕД применением состояния
+        # ИНИЦИАЛИЗИРУЕМ значения комбобоксов
         app._initial_main_frame_setup()
 
         # Применяем сохраненное состояние СРАЗУ после инициализации UI
@@ -96,6 +112,19 @@ def main():
 
         db.close()
         logger.info("Application shutdown")
+
+    def restart_application():
+        """Перезапустить приложение"""
+        import sys
+        import subprocess
+
+        # Закрываем текущее приложение
+        if 'app' in locals():
+            app.root.destroy()
+
+        # Запускаем новое окно
+        subprocess.Popen([sys.executable] + sys.argv)
+        sys.exit()
 
 
 if __name__ == "__main__":
